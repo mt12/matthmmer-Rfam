@@ -1,0 +1,65 @@
+To run the script you will need a SEED file (called ‘SEED’) in your current working directory (cwd). This SEED must be in fasta format and contain a one sequence.
+
+An example of a valid SEED file is:
+
+>CR954253.1/898444-898260
+AGCAAAAAGACCAUUUUAUACACUCAGUCUCCGUGUCUAAAAUGGUCUCU
+CAAAGUCUACUUAAACUGCCCGGAAAGCUUCCUCCCCGGUCUUCCUGUCA
+AUUCGAAUGUUUGCCAAGAAUUUCUUGUUUAUAUCUGGAUUUUGAGCUGC
+CUUCUUAGCCUCACGGGACUAAAUUUAAAGGUCAU
+
+There are now several formats for valid SEED’s including stockholm format, multiple sequences, and spam headers... matthmmer will generally inform you of the problem if you give it an invalid SEED anyway.
+
+The main parameters which can be set are:
+
+    -a or --accession which gives a starting ‘node’. This can be specified with or without version number. Examples of valid ‘nodes’ are:
+
+    -a CR954253
+    -a CR954253.1
+    -a SEED
+
+The final example listed uses the reserved string ‘SEED’ to look inside the SEED file and use the accession in the SEED as the accession parameter. So if the SEED file were to be the example SEED shown above all three of the -a examples shown would produce the same result. If neither -a or -t are provided then the default of -a SEED is used.
+
+    -t or --taxonomy can be given as an alternative to -a. -t expects a valid taxonomy id to be provided.
+    -g or --group sets a ‘group’ to traverse up to in the taxonomy tree. By specifying a group, this sets the level in the tree to find the ‘parent’ node, and from this ‘parent node’, all of the leaves (children) are found in used to produce the minidbs. Only one of -g, -d or -p can be set, if none of these are set, then the default is -g family, as this proved to have a good success in testing.
+    -d or --depth sets a ‘depth’ of how far to traverse up the tree from the starting accession number or taxonomy id to reach a ‘parent node’. From this ‘parent node’, like with -g all of the leaves (children) are found in used to produce the minidbs.
+    -p or --parent declares that the ‘parent node’ is the taxonomy id given (this can only be a taxonomy id, as this will not be a ‘leaf node’)
+
+Examples of valid tree flags are:
+    -a SEED -d 5
+    -a CR954253 -g genus
+    -t 390333 -p
+In the case of the first two examples, either of the two flags could be removed, and matthmmer would still run (albeit with a different configuration, defaulting to the default values). The -p option must be specified with a -t flag to work.
+
+The script will create a directory in the cwd called matthmmerProcessID which will contain the final result of the script as well as several report files on the codes execution and the output of the results and a few of the key intermediate step files. The final output SEED will be labelled SEEDx where x is the number of iterations that the script performed.
+
+The script also creates a directory in the users scratch109 area (or a directory of the users choice, enabled by using the --tempdir flag) entitled ProcessID which contains a lot more rough working files (such as the minidbs and several files for each iteration of the SEED in various formats). This directory is deleted upon the termination of the script, unless the user specifies the --dirty option, which will leave this directory with all the temporary files.
+
+Tips on running:
+
+Having run matthmmer over several families with varying parameters, I can advise that for consistency it is good to use -a SEED and to also use the -g flag over the -d flag. This means that it doesn’t matter about the structure of the tree, the traversal will always reach the same level. I would recommend using -g family as this appears to return a much larger amount of sequences compared to -g genus. Additionally, there seems to be no gain in sequences by going to a higher level in the taxonomy tree than family.
+
+How to move the code or the dbs without breaking the code:
+
+If you need to move the matthmmer code, modules, additional files, or databases then you will also need to change 2 lines of code.
+The matthmmer.pl file, all of the perl modules, and the updatedb.pl file are all located in:
+/warehouse/pfam01/rfam/Users/mt12
+additional files are located in a subdirectory called files within this directory. You will need to keep all of these files in the structure they are in when moving to a different root location. If for whatever reason you need to change the file structure, you will need to make additional changes to the code, which aren’t outlined here.
+All of the databases and database files are located in:
+/lustre/scratch101/blastdb/Rfam/rfamseq/EMBL_Bacterial_Genomes
+Again this directory contains a couple of subdirectories and it is important to keep the file structure consistent when moving these files about without encountering the same issues that are mentioned above.
+So the two lines of code that need to be updated are in matthmmer.pl and are found within the first 20 or so lines of the file:
+use constant SCRATCH_DIR => "/warehouse/pfam01/rfam/Users/mt12";
+use constant DBS_DIR => "/lustre/scratch101/blastdb/Rfam/rfamseq/EMBL_Bacterial_Genomes";
+These need to be updated to the new directory locations.
+Additionally, these same two lines are also found in the opening lines of the updatedb.pl file and will also need to be changed to allow the databases to be updated.
+
+
+How to run the updatedb code
+
+Download the latest http://www.ebi.ac.uk/genomes/bacteria.txt and save as accession_nos in your current working directory.
+Download the latest nodes.dmp file which is found in: ftp://ftp.ncbi.nih.gov/pub/taxonomy/taxdmp.zip
+
+Run updatedb.pl which is (originally) located in:
+/warehouse/pfam01/rfam/Users/mt12
+This will take a long time (an hour or so) to run, and will print out a load of garbage to the screen but will finish with “All done” if it has successfully updated.
