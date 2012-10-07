@@ -7,6 +7,16 @@ package ExtractSeqs;
 
 use constant OVERLAP_SLACK => 5;
 
+#constants detailing the column indeces of table results
+use constant NHMMER_TBL_EVALUE_INDEX = 13;
+use constant NHMMER_TBL_BITSCORE_INDEX = 14;
+use constant NHMMER_TBL_HMMFROM_INDEX = 4;
+use constant NHMMER_TBL_HMMTO_INDEX = 5;
+use constant NHMMER_TBL_STRAND_INDEX = 12;
+use constant NHMMER_TBL_ACCESSION_INDEX = 0;
+use constant NHMMER_TBL_ALIFROM_INDEX = 6;
+use constant NHMMER_TBL_ALITO_INDEX = 7;
+
 #Object for top matching seqs, with start and end attributes for co-ords in the accession.
 sub new {
     my $class = shift;
@@ -90,45 +100,45 @@ sub getGoodNhmmerSeqs{
 					my $satisfiesScoreCond;
 					my $score;
 					if (defined $useEvalue){
-						$score = $lines[13];
+						$score = $lines[NHMMER_TBL_EVALUE_INDEX];
 						$satisfiesScoreCond = ($score < $minBitScore);
 					} else {
-						$score = $lines[14];
+						$score = $lines[NHMMER_TBL_BITSCORE_INDEX];
 						$satisfiesScoreCond = ($score > $minBitScore);						
 					}
 					if ($satisfiesScoreCond){
-						if (($lines[5]-$lines[4])+1 >= ($seqLength * $minPercentageLength)){
+						if (($lines[NHMMER_TBL_HMMTO_INDEX]-$lines[NHMMER_TBL_HMMFROM_INDEX])+1 >= ($seqLength * $minPercentageLength)){
 							$acceptedOneSeq = 1;
 							#adjusts the co-ords of the sequence if the length is a little shorter than the original SEED
-							if ($lines[4] > 1){
-								if ($lines[12] eq "+"){
-									if($dirVars[6]){ print "Adjusting start Co-ords for $lines[0] from $lines[6]"; }
-									$lines[6] -= ($lines[4]-1);
-									if($dirVars[6]){ print " to $lines[6], because this sequence length is less than $seqLength.\n"; }
+							if ($lines[NHMMER_TBL_HMMFROM_INDEX] > 1){
+								if ($lines[NHMMER_TBL_STRAND_INDEX] eq "+"){
+									if($dirVars[6]){ print "Adjusting start Co-ords for $lines[".NHMMER_TBL_ACCESSION_INDEX."] from $lines[".NHMMER_TBL_ALIFROM_INDEX."]"; }
+									$lines[NHMMER_TBL_ALIFROM_INDEX] -= ($lines[NHMMER_TBL_HMMFROM_INDEX]-1);
+									if($dirVars[6]){ print " to $lines[".NHMMER_TBL_ALIFROM_INDEX."], because this sequence length is less than $seqLength.\n"; }
 								} else {
-									if($dirVars[6]){ print "Adjusting start Co-ords for $lines[0] from $lines[6]"; }
-									$lines[6] += ($lines[4]-1);
-									if($dirVars[6]){ print " to $lines[6], because this sequence length is less than $seqLength.\n"; }
+									if($dirVars[6]){ print "Adjusting start Co-ords for $lines[".NHMMER_TBL_ACCESSION_INDEX."] from $lines[".NHMMER_TBL_ALIFROM_INDEX."]"; }
+									$lines[NHMMER_TBL_ALIFROM_INDEX] += ($lines[NHMMER_TBL_HMMFROM_INDEX]-1);
+									if($dirVars[6]){ print " to $lines[".NHMMER_TBL_ALIFROM_INDEX."], because this sequence length is less than $seqLength.\n"; }
 								}
 							}
-							if ($lines[5] < $seqLength){
-								if ($lines[12] eq "+"){
-									if($dirVars[6]){ print "Adjusting end Co-ords for $lines[0] from $lines[7]"; }
-									$lines[7] += ($seqLength-$lines[5]);
-									if($dirVars[6]){ print " to $lines[7], because this sequence length is less than $seqLength.\n"; }
+							if ($lines[NHMMER_TBL_HMMTO_INDEX] < $seqLength){
+								if ($lines[NHMMER_TBL_STRAND_INDEX] eq "+"){
+									if($dirVars[6]){ print "Adjusting end Co-ords for $lines[".NHMMER_TBL_ACCESSION_INDEX."] from $lines[".NHMMER_TBL_ALITO_INDEX."]"; }
+									$lines[NHMMER_TBL_ALITO_INDEX] += ($seqLength-$lines[NHMMER_TBL_HMMTO_INDEX]);
+									if($dirVars[6]){ print " to $lines[".NHMMER_TBL_ALITO_INDEX."], because this sequence length is less than $seqLength.\n"; }
 								} else {
-									if($dirVars[6]){ print "Adjusting end Co-ords for $lines[0] from $lines[7]"; }
-									$lines[7] -= ($seqLength-$lines[5]);
-									if($dirVars[6]){ print " to $lines[7], because this sequence length is less than $seqLength.\n"; }
+									if($dirVars[6]){ print "Adjusting end Co-ords for $lines[".NHMMER_TBL_ACCESSION_INDEX."] from $lines[".NHMMER_TBL_ALITO_INDEX."]"; }
+									$lines[NHMMER_TBL_ALITO_INDEX] -= ($seqLength-$lines[NHMMER_TBL_HMMTO_INDEX]);
+									if($dirVars[6]){ print " to $lines[".NHMMER_TBL_ALITO_INDEX."], because this sequence length is less than $seqLength.\n"; }
 								}
 							}
 							#Checks that this line is not the original seq (same acc, same starts and ends)
-							if (!@meta || (@meta && !($lines[0] eq $meta[0] && $lines[6] == $meta[1] && $lines[7] == $meta[2]))){
+							if (!@meta || (@meta && !($lines[NHMMER_TBL_ACCESSION_INDEX] eq $meta[0] && $lines[NHMMER_TBL_ALIFROM_INDEX] == $meta[1] && $lines[NHMMER_TBL_ALITO_INDEX] == $meta[2]))){
 								#Generates a unique key for the seq
-								my $key = $lines[0]."/".$lines[6]."-".$lines[7];
+								my $key = $lines[NHMMER_TBL_ACCESSION_INDEX]."/".$lines[NHMMER_TBL_ALIFROM_INDEX]."-".$lines[NHMMER_TBL_ALITO_INDEX];
 								#if there is not an entry in the hash with the key, then add a new entry to the hash with the data from the line
 								if (!exists $seqs{$key}){
-									$seqs{$key} = ExtractSeqs->new(accession => $lines[0], start => $lines[6], end => $lines[7], realLength => ($lines[5]-$lines[4])+1, bitScore => $noofIters);
+									$seqs{$key} = ExtractSeqs->new(accession => $lines[NHMMER_TBL_ACCESSION_INDEX], start => $lines[NHMMER_TBL_ALIFROM_INDEX], end => $lines[NHMMER_TBL_ALITO_INDEX], realLength => ($lines[NHMMER_TBL_HMMTO_INDEX]-$lines[NHMMER_TBL_HMMFROM_INDEX])+1, bitScore => $noofIters);
 								}
 								#add this iterations bit score to the hash
 								$seqs{$key}->{bitScore}[$iter] = $score;

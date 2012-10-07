@@ -5,6 +5,9 @@ use warnings;
 
 package SEEDHMM;
 
+#nhmmer location
+use constant NHMMER_DIR => "/nfs/users/nfs_s/sb30/bin/hmmer3.1_alpha_0.30/src/";
+
 #returns true if the SEED exists in the users cwd else dies (cleanly)
 sub checkSEEDExists{
 	my $dirVarsRef = shift;
@@ -36,7 +39,7 @@ sub buildHMM{
 	my @dirVars = @$dirVarsRef;
 
 	#Builds HMM
-	if (system("/nfs/users/nfs_s/sb30/bin/hmmer3.1_alpha_0.30/src/hmmbuild $dirVars[0]/SEED$iter.hmm $dirVars[0]/SEED$iter.stk > $dirVars[0]/hmmbuild$iter") != 0){
+	if (system(NHMMER_DIR . "hmmbuild $dirVars[0]/SEED$iter.hmm $dirVars[0]/SEED$iter.stk > $dirVars[0]/hmmbuild$iter") != 0){
 		FileHandling::cleanDie(\@dirVars, "hmmbuild failed.\n");
 	}
 }
@@ -50,7 +53,7 @@ sub alignSEED{
 	my $seedIter = $iter+1;
 
 	#Aligns HMM
-	if (system("/nfs/users/nfs_s/sb30/bin/hmmer3.1_alpha_0.30/src/hmmalign $dirVars[0]/SEED$iter.hmm $dirVars[0]/SEED$seedIter > $dirVars[0]/SEED$seedIter.stk") != 0){
+	if (system(NHMMER_DIR . "hmmalign $dirVars[0]/SEED$iter.hmm $dirVars[0]/SEED$seedIter > $dirVars[0]/SEED$seedIter.stk") != 0){
 		FileHandling::cleanDie(\@dirVars, "hmmalign failed.\n");
 	}
 
@@ -110,7 +113,7 @@ sub nhmmerSEED{
 		#checks minidb exists
 		if (!-e $miniDB){
 			FileHandling::cleanDie(\@dirVars, "Can't find MiniDB.\n");
-		} elsif (system("/nfs/users/nfs_s/sb30/bin/hmmer3.1_alpha_0.30/src/nhmmer --tblout $dirVars[0]/SEED$iter-$i.nhmmer.tblout $dirVars[0]/SEED$iter.hmm $miniDB > $dirVars[0]/nhmmer$iter-$i") != 0) {
+		} elsif (system(NHMMER_DIR . "nhmmer --tblout $dirVars[0]/SEED$iter-$i.nhmmer.tblout $dirVars[0]/SEED$iter.hmm $miniDB > $dirVars[0]/nhmmer$iter-$i") != 0) {
 			FileHandling::cleanDie(\@dirVars, "nhmmer error.\n");
 		}
 		FileHandling::copyOut("$dirVars[0]/SEED$iter-$i.nhmmer.tblout", "$dirVars[1]/matthmmer$$/nhmmertblout");
